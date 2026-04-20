@@ -15,7 +15,8 @@ const pool = mysql.createPool({
 });
 
 pool.getConnection()
-    .then(conn => {
+    .then(async conn => {
+        await conn.query(`SET time_zone = '+00:00'`);
         console.log('MySQL connected successfully');
         conn.release();
     })

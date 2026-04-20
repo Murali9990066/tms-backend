@@ -14,7 +14,6 @@ const userRoutes = require('./microservices/userMicroservice/user.routes');
 const projectRoutes = require('./microservices/projectMicroservice/project.routes');
 const timesheetRoutes = require('./microservices/timesheetMicroservice/timesheet.routes');
 const documentRoutes = require('./microservices/documentMicroservice/document.routes');
-const approvalRoutes = require('./microservices/approvalMicroservice/approval.routes');
 const notificationRoutes = require('./microservices/notificationMicroservice/notification.routes');
 const reportRoutes = require('./microservices/reportMicroservice/report.routes');
 
@@ -44,7 +43,6 @@ app.use('/user', userRoutes);
 app.use('/project', projectRoutes);
 app.use('/timesheet', timesheetRoutes);
 app.use('/document', documentRoutes);
-app.use('/approval', approvalRoutes);
 app.use('/notification', notificationRoutes);
 app.use('/report', reportRoutes);
 

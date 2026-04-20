@@ -67,6 +67,52 @@ const TimesheetModel = {
         return rows;
     },
 
+    // update timesheet status
+    updateStatus: async (id, status) => {
+        const [result] = await pool.query(
+            `UPDATE timesheet SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            [status, id]
+        );
+        return result;
+    },
+
+    // get all timesheets for PM (by vendor)
+    findAllByVendor: async (vendor_id) => {
+        const [rows] = await pool.query(
+            `SELECT t.*, u.name as employee_name, u.display_employee_id
+       FROM timesheet t
+       INNER JOIN \`user\` u ON t.user_id = u.id
+       WHERE u.vendor_id = ?
+       ORDER BY t.created_at DESC`,
+            [vendor_id]
+        );
+        return rows;
+    },
+
+    // create approval record
+    createApproval: async (data) => {
+        const { timesheet_id, reviewed_by, action, comments, document_verified } = data;
+        const [result] = await pool.query(
+            `INSERT INTO approval (timesheet_id, reviewed_by, action, comments, document_verified)
+       VALUES (?, ?, ?, ?, ?)`,
+            [timesheet_id, reviewed_by, action, comments || null, document_verified || false]
+        );
+        return result;
+    },
+
+    // get approval history for a timesheet
+    findApprovals: async (timesheet_id) => {
+        const [rows] = await pool.query(
+            `SELECT a.*, u.name as reviewed_by_name
+       FROM approval a
+       INNER JOIN \`user\` u ON a.reviewed_by = u.id
+       WHERE a.timesheet_id = ?
+       ORDER BY a.actioned_at DESC`,
+            [timesheet_id]
+        );
+        return rows;
+    },
+
 };
 
 module.exports = TimesheetModel;

@@ -83,7 +83,6 @@ const AuthController = {
                 return sendResponse(res, 400, 'Password must be at least 8 characters');
             }
 
-            // check if this is actually first login
             const [userRows] = await pool.query(
                 `SELECT is_first_login FROM \`user\` WHERE id = ?`, [user_id]
             );
@@ -173,9 +172,12 @@ const AuthController = {
             }
 
             const resetToken = crypto.randomBytes(32).toString('hex');
-            const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+            const expiryUTC = new Date(Date.now() + 60 * 60 * 1000)
+                .toISOString()
+                .slice(0, 19)
+                .replace('T', ' ');
 
-            await AuthModel.saveResetToken(user.id, resetToken, expiry);
+            await AuthModel.saveResetToken(user.id, resetToken, expiryUTC);
 
             console.log('─────────────────────────────────────');
             console.log('📧 Password Reset Link');
@@ -183,6 +185,9 @@ const AuthController = {
             console.log(`Link   : http://localhost:3000/reset-password?token=${resetToken}`);
             console.log(`Expiry : 1 hour`);
             console.log('─────────────────────────────────────');
+
+            console.log('Current UTC time:', new Date().toISOString());
+            console.log('Expiry UTC:', expiryUTC);
 
             return sendResponse(res, 200, 'If this email exists you will receive a password reset link shortly');
 
