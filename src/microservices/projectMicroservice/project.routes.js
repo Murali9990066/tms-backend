@@ -7,7 +7,7 @@ const authorize = require('../../shared/middleware/rbac.middleware');
 // must be before /:id routes to avoid conflict
 
 // GET    /project/tasks
-router.get('/tasks', authorize('ADMIN', 'SUPER_ADMIN'), ProjectController.getAllTasks);
+router.get('/tasks', authorize('ADMIN', 'SUPER_ADMIN', 'PM', 'EMPLOYEE'), ProjectController.getAllTasks);
 
 // GET    /project/tasks/vendor?vendor_id=1
 router.get('/tasks/vendor', authorize('ADMIN', 'PM', 'EMPLOYEE'), ProjectController.getVendorTasks);
@@ -25,7 +25,7 @@ router.patch('/tasks/:id/visibility', authorize('ADMIN'), ProjectController.upda
 router.post('/allocation', authorize('ADMIN'), ProjectController.createAllocation);
 
 // GET    /project/allocation?project_id=1 or ?user_id=1
-router.get('/allocation', authorize('ADMIN', 'PM'), ProjectController.getAllocations);
+router.get('/allocation', authorize('ADMIN', 'PM', 'EMPLOYEE'), ProjectController.getAllocations);
 
 // DELETE /project/allocation/:id
 router.delete('/allocation/:id', authorize('ADMIN'), ProjectController.deleteAllocation);

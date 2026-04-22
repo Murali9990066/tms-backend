@@ -150,7 +150,7 @@ const TimesheetController = {
         }
     },
 
-    // GET /timesheet/:id — PM views specific timesheet with entries
+    // GET /timesheet/:id — PM views specific timesheet with entries + documents
     getTimesheetById: async (req, res) => {
         try {
             const timesheet = await TimesheetModel.findById(req.params.id);
@@ -160,11 +160,13 @@ const TimesheetController = {
 
             const entries = await TimesheetModel.findEntries(req.params.id);
             const approvals = await TimesheetModel.findApprovals(req.params.id);
+            const documents = await TimesheetModel.findDocumentsByTimesheetId(req.params.id);
 
             return sendResponse(res, 200, 'Timesheet fetched successfully', {
                 timesheet,
                 entries,
                 approvals,
+                documents,
             });
 
         } catch (err) {

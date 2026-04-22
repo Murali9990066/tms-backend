@@ -113,6 +113,19 @@ const TimesheetModel = {
         return rows;
     },
 
+    findDocumentsByTimesheetId: async (timesheet_id) => {
+        const [rows] = await pool.query(
+            `SELECT d.id, d.file_name, d.file_type, d.storage_path, d.uploaded_at,
+                u.name AS uploaded_by_name, u.display_employee_id
+         FROM document d
+         JOIN \`user\` u ON u.id = d.uploaded_by
+         WHERE d.timesheet_id = ?
+         ORDER BY d.uploaded_at ASC`,
+            [timesheet_id]
+        );
+        return rows;
+    },
+
 };
 
 module.exports = TimesheetModel;

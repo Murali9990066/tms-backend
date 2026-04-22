@@ -166,12 +166,14 @@ const createTables = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS document (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        timesheet_id INT NOT NULL UNIQUE,
+        timesheet_id INT NOT NULL,
+        uploaded_by INT NOT NULL,
         file_name VARCHAR(255) NOT NULL,
         file_type VARCHAR(10) NOT NULL,
         storage_path VARCHAR(500) NOT NULL,
         uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (timesheet_id) REFERENCES timesheet(id) ON DELETE CASCADE
+        FOREIGN KEY (timesheet_id) REFERENCES timesheet(id) ON DELETE CASCADE,
+        FOREIGN KEY (uploaded_by) REFERENCES \`user\`(id) ON DELETE CASCADE
       );
     `);
     console.log('✔ document table ready');
