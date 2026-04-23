@@ -1,4 +1,6 @@
-require('dotenv').config({ path: `.env.${process.env.NODE_ENV || 'local'}` });
+const envFile = process.env.NODE_ENV === 'production' ? '.env.prod' : '.env.local';
+require('dotenv').config({ path: envFile });
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -68,7 +70,6 @@ const start = async () => {
     try {
         await createTables();
         await seedSuperAdmin();
-        await seedTasks();
         await seedTasks();
         app.listen(PORT, () => {
             console.log(`TMS server running on port ${PORT} in ${process.env.NODE_ENV || 'local'} mode`);
