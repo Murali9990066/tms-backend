@@ -3,7 +3,25 @@ const fs = require('fs');
 const DocumentModel = require('./document.model');
 const sendResponse = require('../../shared/utils/response.util');
 
+const isProduction = process.env.NODE_ENV === 'production';
 const BLOCKED_STATUSES = ['SUBMITTED', 'APPROVED'];
+
+// Delete file from S3
+const deleteFromS3 = async (storagePath) => {
+    const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+    const s3 = new S3Client({ region: process.env.AWS_REGION });
+    await s3.send(new DeleteObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: storagePath
+    }));
+};
+
+// Delete file from local disk
+const deleteFromLocal = (storagePath) => {
+    if (fs.existsSync(storagePath)) {
+        fs.unlinkSync(storagePath);
+    }
+};
 
 const DocumentController = {
 
@@ -17,7 +35,11 @@ const DocumentController = {
             const timesheet = await DocumentModel.findTimesheetById(timesheetId);
             if (!timesheet) {
                 if (req.files?.length) {
-                    req.files.forEach(f => fs.existsSync(f.path) && fs.unlinkSync(f.path));
+                    if (isProduction) {
+                        for (const f of req.files) await deleteFromS3(f.key);
+                    } else {
+                        req.files.forEach(f => deleteFromLocal(f.path));
+                    }
                 }
                 return sendResponse(res, 404, 'Timesheet not found');
             }
@@ -25,7 +47,11 @@ const DocumentController = {
             // Block upload if timesheet is SUBMITTED or APPROVED
             if (BLOCKED_STATUSES.includes(timesheet.status)) {
                 if (req.files?.length) {
-                    req.files.forEach(f => fs.existsSync(f.path) && fs.unlinkSync(f.path));
+                    if (isProduction) {
+                        for (const f of req.files) await deleteFromS3(f.key);
+                    } else {
+                        req.files.forEach(f => deleteFromLocal(f.path));
+                    }
                 }
                 return sendResponse(res, 403, `Cannot upload documents when timesheet is ${timesheet.status}`);
             }
@@ -38,7 +64,11 @@ const DocumentController = {
             // Check existing doc count + new uploads don't exceed 5
             const existingCount = await DocumentModel.countByTimesheetId(timesheetId);
             if (Number(existingCount) + req.files.length > 5) {
-                req.files.forEach(f => fs.existsSync(f.path) && fs.unlinkSync(f.path));
+                if (isProduction) {
+                    for (const f of req.files) await deleteFromS3(f.key);
+                } else {
+                    req.files.forEach(f => deleteFromLocal(f.path));
+                }
                 return sendResponse(res, 400, `Cannot upload ${req.files.length} file(s). Max 5 documents allowed per timesheet. Currently has ${existingCount}.`);
             }
 
@@ -46,12 +76,15 @@ const DocumentController = {
             const inserted = [];
             for (const file of req.files) {
                 const fileType = path.extname(file.originalname).toLowerCase().replace('.', '');
+                // In production storagePath = S3 key, in local = file.path
+                const storagePath = isProduction ? file.key : file.path;
+
                 const docId = await DocumentModel.create({
                     timesheetId,
                     uploadedBy,
                     fileName: file.originalname,
                     fileType,
-                    storagePath: file.path
+                    storagePath
                 });
                 inserted.push({ id: docId, file_name: file.originalname, file_type: fileType });
             }
@@ -97,9 +130,11 @@ const DocumentController = {
                 return sendResponse(res, 403, `Cannot delete documents when timesheet is ${timesheet.status}`);
             }
 
-            // Delete file from disk
-            if (fs.existsSync(document.storage_path)) {
-                fs.unlinkSync(document.storage_path);
+            // Delete file from S3 or local based on environment
+            if (isProduction) {
+                await deleteFromS3(document.storage_path);
+            } else {
+                deleteFromLocal(document.storage_path);
             }
 
             // Delete from DB
