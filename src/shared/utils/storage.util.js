@@ -1,7 +1,7 @@
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
 const PRESIGNED_URL_EXPIRY = 30 * 60; // 30 minutes in seconds
 
 const generateFileUrl = async (storagePath) => {
