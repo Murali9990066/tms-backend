@@ -1,5 +1,6 @@
 const TimesheetModel = require('./timesheet.model');
 const sendResponse = require('../../shared/utils/response.util');
+const { generateFileUrl } = require('../../shared/utils/storage.util');
 
 const TimesheetController = {
 
@@ -162,11 +163,19 @@ const TimesheetController = {
             const approvals = await TimesheetModel.findApprovals(req.params.id);
             const documents = await TimesheetModel.findDocumentsByTimesheetId(req.params.id);
 
+            // Attach view/download URL to each document
+            const documentsWithUrls = await Promise.all(
+                documents.map(async (doc) => ({
+                    ...doc,
+                    url: await generateFileUrl(doc.storage_path)
+                }))
+            );
+
             return sendResponse(res, 200, 'Timesheet fetched successfully', {
                 timesheet,
                 entries,
                 approvals,
-                documents,
+                documents: documentsWithUrls,
             });
 
         } catch (err) {

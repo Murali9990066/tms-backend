@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const DocumentModel = require('./document.model');
 const sendResponse = require('../../shared/utils/response.util');
+const { generateFileUrl } = require('../../shared/utils/storage.util');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const BLOCKED_STATUSES = ['SUBMITTED', 'APPROVED'];
@@ -76,7 +77,6 @@ const DocumentController = {
             const inserted = [];
             for (const file of req.files) {
                 const fileType = path.extname(file.originalname).toLowerCase().replace('.', '');
-                // In production storagePath = S3 key, in local = file.path
                 const storagePath = isProduction ? file.key : file.path;
 
                 const docId = await DocumentModel.create({
@@ -106,7 +106,15 @@ const DocumentController = {
 
             const documents = await DocumentModel.findByTimesheetId(timesheetId);
 
-            return sendResponse(res, 200, 'Documents fetched successfully', { documents });
+            // Attach view/download URL to each document
+            const documentsWithUrls = await Promise.all(
+                documents.map(async (doc) => ({
+                    ...doc,
+                    url: await generateFileUrl(doc.storage_path)
+                }))
+            );
+
+            return sendResponse(res, 200, 'Documents fetched successfully', { documents: documentsWithUrls });
 
         } catch (err) {
             return sendResponse(res, 500, err.message);
