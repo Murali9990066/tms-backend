@@ -76,14 +76,15 @@ const TimesheetModel = {
         return result;
     },
 
-    // get all timesheets for PM (by vendor)
+    // get all timesheets for PM (by vendor) — excludes DRAFT
     findAllByVendor: async (vendor_id) => {
         const [rows] = await pool.query(
             `SELECT t.*, u.name as employee_name, u.display_employee_id
-       FROM timesheet t
-       INNER JOIN \`user\` u ON t.user_id = u.id
-       WHERE u.vendor_id = ?
-       ORDER BY t.created_at DESC`,
+         FROM timesheet t
+         INNER JOIN \`user\` u ON t.user_id = u.id
+         WHERE u.vendor_id = ?
+         AND t.status != 'DRAFT'
+         ORDER BY t.created_at DESC`,
             [vendor_id]
         );
         return rows;
